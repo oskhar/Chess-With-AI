@@ -94,7 +94,7 @@ class Board {
                     this.area, this.pihak, piece
                 );
 
-                this.bidak[this.pihak][piece].element.onclick = this.click_bidak.bind(this, this.pihak, piece);
+                // this.bidak[this.pihak][piece].element.onclick = this.click_bidak.bind(this, this.pihak, piece);
 
             }
         }
@@ -135,11 +135,10 @@ class Board {
                     "./assets/images/" + this.bidak[i][j].pihak + "/q.svg", this.bidak[i][j].x, this.bidak[i][j].y,
                     9,
                     this.papan_catur,
-                    this.area, this.bidak[i][j].pihak, nama
+                    this.area, this.bidak[i][j].pihak, nama, 
                 );
-                this.bidak[i].push(nama);
-                this.bidak[i][nama].element.onclick = this.click_bidak.bind(this, i, nama);
-                console.log(this.bidak[i]);
+                this.bidak[i].push("9"+nama);
+                // this.bidak[i][nama].element.onclick = this.click_bidak.bind(this, i, nama);
                 
             }
         }
@@ -168,6 +167,7 @@ class Board {
                 if (this.death[ph].indexOf(bd.substring(1)) == -1) {
 
                     const {y, x, pihak, nama} = this.bidak[ph][bd.substring(1)];
+                    // console.log(y + " " + x);
                     rboard[y][x] = pihak + nama;
 
                 }
@@ -185,7 +185,7 @@ class Board {
 
         const musuh_moves = this.all_legal_move(musuh, unuse);
         for (let i = 0; i < musuh_moves.length; i++) {
-            const moves = musuh_moves[i];
+            const moves = musuh_moves[i][2];
             for (let j = 0; j < moves.length; j++) {
                 const move = moves[j];
                 if (move[0] === row && move[1] === column) {
@@ -250,43 +250,42 @@ class Board {
     }
 
     // Method
-    aksi_click (i, j) {
+    get_move (pihak) {
 
         // Seleksi legal_move
-        this.lm = this.bidak[i][j].legal_move(this.data);
+        this.tmp = [];
 
-        if (j == "r" && this.bidak[i][j].first) {
-            const tmp = this.bidak[i][j].special_move(this.data);
-            if (tmp != 0 && this.king_safe) {
-                if (this.bidak[i]["b"+tmp].first) {
-                    this.area_special(i, "b"+tmp);
+        this.all_legal_move(pihak).forEach(bidak => {
+            this.lm = this.bidak[bidak[0]][bidak[1]].legal_move(this.data);
+
+            if (bidak[1] == "r" && this.bidak[bidak[0]][bidak[1]].first) {
+                const tmp = this.bidak[bidak[0]][bidak[1]].special_move(this.data);
+                if (tmp != 0 && this.king_safe) {
+                    if (this.bidak[bidak[0]]["b"+tmp].first) {
+                        // this.area_special(i, "b"+tmp);
+                        this.tmp.push([bidak[0], "b"+tmp]);
+                    }
                 }
             }
-        }
-
-        for (let x = 0; x < this.lm.length; x++) {
-            if (!this.king_safe) {
+    
+            for (let x = 0; x < this.lm.length; x++) {
+            
                 if (this.check_move(
-                    i, j,
+                    bidak[0], bidak[1],
                     this.lm[x][0],
                     this.lm[x][1]
                 )) {
-                    this.area_gerak(
-                        i, j,
+                    this.tmp.push([
+                        bidak[0], bidak[1],
                         this.lm[x][0],
                         this.lm[x][1]
-                    );    
+                    ]);    
                 }
-
-            } else {
-                this.area_gerak(
-                    i, j,
-                    this.lm[x][0],
-                    this.lm[x][1]
-                ); 
-
+    
             }
-        }
+            
+        });
+        return this.tmp;
 
     }
 
@@ -355,7 +354,7 @@ class Board {
             if (i != unuse && this.death[pihak].indexOf(i) == -1) {
                 this.lmove = this.bidak[pihak][i].legal_move(this.data);
                 if (this.lmove.length > 0) {
-                    this.a_lmove.push(this.lmove);
+                    this.a_lmove.push([pihak, i, this.lmove]);
                 }
                 
             }
@@ -394,4 +393,16 @@ const run = new Board(((innerHeight < innerWidth ? innerHeight : innerWidth)-100
 document.body.onresize = function () {
     run.area = ((innerHeight < innerWidth ? innerHeight : innerWidth)-100)/8;
     run.resize_board();
- };
+};
+
+
+setInterval(() => {
+    let pihak = run.jalan_putih ? "p" : "h";
+    let legal_move = run.get_move(pihak);
+    let random_move = Math.floor(Math.random() * legal_move.length);
+    if (legal_move[random_move].length > 2)
+        run.move(legal_move[random_move][0], legal_move[random_move][1], legal_move[random_move][2], legal_move[random_move][3]);
+    else
+        run.area_special(legal_move[random_move][0], legal_move[random_move][1]);
+    
+}, 1000);

@@ -5,10 +5,10 @@ import { ClassBidak } from "./ClassBidak.js";
 export class Pion extends ClassBidak {
 
     // Constructor
-    constructor (gambar, x, y, poin, papan_catur, area, pihak, nama, i) {
+    constructor (gambar, x, y, poin, papan_catur, area, pihak, nama) {
 
         // Jalankan construct parent
-        super(gambar, x, y, poin, papan_catur, area, pihak, nama, i);
+        super(gambar, x, y, poin, papan_catur, area, pihak, nama);
 
         // Atribute
         this.first = true;

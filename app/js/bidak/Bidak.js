@@ -461,7 +461,7 @@ export class Raja extends ClassBidak {
             if (data[this.y][this.x+1] == "x" || data[this.y][this.x+1][0] == this.lawan)
                 this.lmove.push([this.x + 1, 0 + this.y]);
 
-        if (this.x-1 < 8)
+        if (this.x-1 > -1)
             if (data[this.y][this.x-1] == "x" || data[this.y][this.x-1][0] == this.lawan)
                 this.lmove.push([this.x + -1, 0 + this.y]);
 

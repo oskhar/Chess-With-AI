@@ -1,4 +1,6 @@
 import { Pion, Benteng, Kuda, Peluncur, Ratu, Raja } from "./bidak/Bidak.js";
+import { Garis } from "./chart/ogive.js";
+
 const ObjectBidak = {
     'p': Pion,
     'b': Benteng,
@@ -139,6 +141,7 @@ class Board {
                 );
                 this.bidak[i].push("9"+nama);
                 // this.bidak[i][nama].element.onclick = this.click_bidak.bind(this, i, nama);
+                console.log(this.bidak[i][nama]);
                 
             }
         }
@@ -158,12 +161,13 @@ class Board {
     representasi_board () {
 
         const rboard = new Array(8).fill().map(() => new Array(8).fill('x'));
-        const allBidak = [...this.bidak['h'], ...this.bidak['p']];
+        let allBidak;
  
         for (let i = 0; i < 2; i++) {
+            const ph = i == 0 ? 'h' : 'p';
+            allBidak = [...this.bidak[ph]];
             allBidak.forEach( bd => {
 
-                const ph = i == 0 ? 'h' : 'p';
                 if (this.death[ph].indexOf(bd.substring(1)) == -1) {
 
                     const {y, x, pihak, nama} = this.bidak[ph][bd.substring(1)];
@@ -174,6 +178,29 @@ class Board {
             });
         }
         return rboard;
+
+    }
+
+    // Method
+    get_kualitas (pihak, musuh) {
+
+        const poin = [0, 0];
+        let allBidak;
+        
+        for (let i = 0; i < 2; i++) {
+            const ph = i == 0 ? pihak : musuh;
+            allBidak = [...this.bidak[ph]];
+            allBidak.forEach( bd => {
+
+                if (this.death[ph].indexOf(bd.substring(1)) == -1) {
+                    poin[i] += this.bidak[ph][bd.substring(1)].poin;
+
+                }
+
+            });
+        }
+
+        return poin[0] - poin[1];
 
     }
 
@@ -390,6 +417,8 @@ class Board {
 } 
 
 const run = new Board(((innerHeight < innerWidth ? innerHeight : innerWidth)-100)/8);
+const grafik = new Garis("grafik", []);
+
 document.body.onresize = function () {
     run.area = ((innerHeight < innerWidth ? innerHeight : innerWidth)-100)/8;
     run.resize_board();
@@ -397,9 +426,16 @@ document.body.onresize = function () {
 
 
 setInterval(() => {
+
     let pihak = run.jalan_putih ? "p" : "h";
     let legal_move = run.get_move(pihak);
     let random_move = Math.floor(Math.random() * legal_move.length);
+    if (run.jalan_putih) {
+        grafik.data.push((legal_move.length / 10) + run.get_kualitas("p", "h"));
+        grafik.drawGraph();
+        console.log(run.get_kualitas("p", "h"));
+    }
+
     if (legal_move[random_move].length > 2)
         run.move(legal_move[random_move][0], legal_move[random_move][1], legal_move[random_move][2], legal_move[random_move][3]);
     else

@@ -8,6 +8,7 @@ body {
     right: 0;
     margin: auto;
     top: 50px;
+    left: -30%;
 }
 #area {
     position: absolute;
@@ -35,4 +36,11 @@ body {
     width: calc(100%/8);
     background-color: #ff4744;
     opacity: 0.8;
+}
+#grafik {
+    z-index: 3;
+    /* background-color: black; */
+    position: absolute;
+    top: 30px;
+    right: 100px;
 }

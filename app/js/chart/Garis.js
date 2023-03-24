@@ -61,7 +61,7 @@ export class Garis {
         }
     
         // Menggambar label sumbu y
-        for (let i = Math.min(...this.data); i <= Math.max(...this.data); i += 10) {
+        for (let i = 0; i <= Math.max(...this.data); i += 10) {
             this.ctx.fillText(i, this.graphX - 20, this.graphY + this.graphHeight - i * this.scaleY);
         }
 

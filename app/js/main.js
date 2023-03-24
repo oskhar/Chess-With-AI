@@ -1,5 +1,5 @@
 import { Pion, Benteng, Kuda, Peluncur, Ratu, Raja } from "./bidak/Bidak.js";
-import { Garis } from "./chart/ogive.js";
+import { Garis } from "./chart/Garis.js";
 
 const ObjectBidak = {
     'p': Pion,

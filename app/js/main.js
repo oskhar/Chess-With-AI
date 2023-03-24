@@ -16,13 +16,10 @@ class Board {
 
         // Atribute
         this.data = [];
-        this.death = {
-            "h": [],
-            "p": []
-        }
         this.area = area;
         this.jalan_putih = true;
         this.king_safe = true;
+        this.game_over = false;
         this.papan_catur = document.getElementById("papan_catur");
         this.papan_permukaan = document.getElementById("papan_permukaan");
         this.bidak = {
@@ -33,9 +30,12 @@ class Board {
             "p": [
                 "1p1", "1p2", "1p3", "1p4", "1p5", "1p6", "1p7", "1p8",
                 "5b1", "3k1", "3g1", "9q", "0r", "3g2", "3k2", "5b2"
-            ]
-            
-            };
+            ]  
+        };
+        this.death = {
+            "h": [],
+            "p": []
+        };
 
         // Bentuk papan catur
         this.papan_catur.style.height = (this.area * 8) + "px";
@@ -182,9 +182,10 @@ class Board {
     }
 
     // Method
-    get_kualitas (pihak, musuh) {
+    get_score (pihak, musuh, kualitas = true) {
 
         const poin = [0, 0];
+        let jumlah = 0;
         let allBidak;
         
         for (let i = 0; i < 2; i++) {
@@ -193,14 +194,20 @@ class Board {
             allBidak.forEach( bd => {
 
                 if (this.death[ph].indexOf(bd.substring(1)) == -1) {
-                    poin[i] += this.bidak[ph][bd.substring(1)].poin;
+                    if (kualitas)
+                        poin[i] += this.bidak[ph][bd.substring(1)].poin;
+                    else
+                        jumlah++;
 
                 }
 
             });
         }
 
-        return poin[0] - poin[1];
+        if (kualitas)
+            return poin[0] - poin[1];
+        else
+            return jumlah;
 
     }
 
@@ -281,8 +288,10 @@ class Board {
 
         // Seleksi legal_move
         this.tmp = [];
+        this.moves = 0;
 
         this.all_legal_move(pihak).forEach(bidak => {
+
             this.lm = this.bidak[bidak[0]][bidak[1]].legal_move(this.data);
 
             if (bidak[1] == "r" && this.bidak[bidak[0]][bidak[1]].first) {
@@ -306,12 +315,16 @@ class Board {
                         bidak[0], bidak[1],
                         this.lm[x][0],
                         this.lm[x][1]
-                    ]);    
+                    ]);
+                    this.moves++;
                 }
     
             }
             
         });
+
+        if (this.moves == 0)
+            this.game_over = true;
         return this.tmp;
 
     }
@@ -425,20 +438,29 @@ document.body.onresize = function () {
 };
 
 
-setInterval(() => {
+var loop = setInterval(() => {
 
     let pihak = run.jalan_putih ? "p" : "h";
     let legal_move = run.get_move(pihak);
     let random_move = Math.floor(Math.random() * legal_move.length);
     if (run.jalan_putih) {
-        grafik.data.push((legal_move.length / 10) + run.get_kualitas("p", "h"));
+        grafik.data.push((legal_move.length / 10) + run.get_score("p", "h"));
         grafik.drawGraph();
-        console.log(run.get_kualitas("p", "h"));
     }
-
     if (legal_move[random_move].length > 2)
         run.move(legal_move[random_move][0], legal_move[random_move][1], legal_move[random_move][2], legal_move[random_move][3]);
     else
         run.area_special(legal_move[random_move][0], legal_move[random_move][1]);
+
+    console.log(run.get_score("p", "h"));
+
+    // Jika game over
+    if (run.game_over) {
+        clearInterval(loop);
+        alert("Game over");
+    } else if (run.get_score("p", "h", false) == 1) {
+        clearInterval(loop);
+        alert("Game draw");
+    }
     
-}, 1000);
+}, 100);

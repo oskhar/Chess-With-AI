@@ -35,8 +35,8 @@ export class ClassBidak {
     }
 
     // Method
-    position_str () {
-        return String.fromCharCode(97+this.x) + this.y;
+    position () {
+        return this.x + "" + this.y;
 
     }
 

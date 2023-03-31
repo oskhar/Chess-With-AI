@@ -1,5 +1,7 @@
 import { Pion, Benteng, Kuda, Peluncur, Ratu, Raja } from "./bidak/Bidak.js";
 import { Garis } from "./chart/Garis.js";
+import { AI } from "./ai/AI.js";
+import { training_x, training_y } from "./ai/Training_Data.js";
 
 const ObjectBidak = {
     'p': Pion,
@@ -35,6 +37,10 @@ class Board {
         this.death = {
             "h": [],
             "p": []
+        };
+        this.kuantitas = {
+            "p": 16,
+            "h": 16
         };
 
         // Bentuk papan catur
@@ -141,7 +147,6 @@ class Board {
                 );
                 this.bidak[i].push("9"+nama);
                 // this.bidak[i][nama].element.onclick = this.click_bidak.bind(this, i, nama);
-                console.log(this.bidak[i][nama]);
                 
             }
         }
@@ -162,30 +167,34 @@ class Board {
 
         const rboard = new Array(8).fill().map(() => new Array(8).fill('x'));
         let allBidak;
+        let tmp;
  
         for (let i = 0; i < 2; i++) {
             const ph = i == 0 ? 'h' : 'p';
+            tmp = 0;
             allBidak = [...this.bidak[ph]];
             allBidak.forEach( bd => {
 
                 if (this.death[ph].indexOf(bd.substring(1)) == -1) {
 
                     const {y, x, pihak, nama} = this.bidak[ph][bd.substring(1)];
-                    // console.log(y + " " + x);
                     rboard[y][x] = pihak + nama;
+                    tmp++;
 
                 }
+
             });
+            this.kuantitas[ph] = tmp;
+
         }
         return rboard;
 
     }
 
     // Method
-    get_score (pihak, musuh, kualitas = true) {
+    get_kualitas (pihak, musuh) {
 
         const poin = [0, 0];
-        let jumlah = 0;
         let allBidak;
         
         for (let i = 0; i < 2; i++) {
@@ -194,20 +203,13 @@ class Board {
             allBidak.forEach( bd => {
 
                 if (this.death[ph].indexOf(bd.substring(1)) == -1) {
-                    if (kualitas)
-                        poin[i] += this.bidak[ph][bd.substring(1)].poin;
-                    else
-                        jumlah++;
+                    poin[i] += this.bidak[ph][bd.substring(1)].poin;
 
                 }
 
             });
         }
-
-        if (kualitas)
-            return poin[0] - poin[1];
-        else
-            return jumlah;
+        return poin[0] - poin[1];
 
     }
 
@@ -429,38 +431,71 @@ class Board {
 
 } 
 
+
+const pieces = ['pp', 'pb', 'pk', 'pg', 'pq', 'pr', 'hp', 'hb', 'hk', 'hg', 'hq', 'hr'];
 const run = new Board(((innerHeight < innerWidth ? innerHeight : innerWidth)-100)/8);
 const grafik = new Garis("grafik", []);
+const Brain = new AI(tf, pieces);
+
+// Training
+Brain.create_model();
+Brain.x = training_x;
+Brain.y = training_y;
+Brain.model_training();
 
 document.body.onresize = function () {
     run.area = ((innerHeight < innerWidth ? innerHeight : innerWidth)-100)/8;
     run.resize_board();
 };
 
-
+var tmp_poin = -Infinity;
+var pl_poin = 0;
 var loop = setInterval(() => {
 
     let pihak = run.jalan_putih ? "p" : "h";
     let legal_move = run.get_move(pihak);
-    let random_move = Math.floor(Math.random() * legal_move.length);
-    if (run.jalan_putih) {
-        grafik.data.push((legal_move.length / 10) + run.get_score("p", "h"));
+    // let random_move = Math.floor(Math.random() * legal_move.length);
+    let poin = (legal_move.length / 10) + run.get_kualitas("p", "h") + pl_poin*-1;
+    if (run.jalan_putih && poin < pl_poin) {
+        for (let i = 0; i < grafik.data.length; i++) {
+            pl_poin = poin;
+            grafik.data[i] = grafik.data[i] + pl_poin*-1;
+            
+        }
+    } else if (run.jalan_putih) {
+        grafik.data.push(poin);
         grafik.drawGraph();
     }
-    if (legal_move[random_move].length > 2)
-        run.move(legal_move[random_move][0], legal_move[random_move][1], legal_move[random_move][2], legal_move[random_move][3]);
-    else
-        run.area_special(legal_move[random_move][0], legal_move[random_move][1]);
-
-    console.log(run.get_score("p", "h"));
 
     // Jika game over
     if (run.game_over) {
         clearInterval(loop);
         alert("Game over");
-    } else if (run.get_score("p", "h", false) == 1) {
+        Brain.model_training();
+
+    } else if (run.kuantitas["p"] < 3 && run.kuantitas["h"] < 3) {
         clearInterval(loop);
         alert("Game draw");
+        Brain.model_training();
+
     }
+
+    if (legal_move[random_move].length > 2) {
+        if (tmp_poin < poin) {
+            let langkah_to = legal_move[random_move][2] + "" + legal_move[random_move][3];
+            const move = {
+                from: run.bidak[legal_move[random_move][0]][legal_move[random_move][1]].position(),
+                to: langkah_to
+            }
+            // Brain.create_dataset(run.data, move);
+        }
+        tmp_poin = poin;
+        run.move(legal_move[random_move][0], legal_move[random_move][1], legal_move[random_move][2], legal_move[random_move][3]);
+    } else {
+        run.area_special(legal_move[random_move][0], legal_move[random_move][1]);
+    }
+
+    console.log(run.kuantitas["p"] + " " + run.kuantitas["h"]);
+
     
-}, 100);
+}, 1000);
